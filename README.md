@@ -1,62 +1,65 @@
-# Predicción de High Engagement en el VLE Dataset
+# VLE Engagement Prediction
 
-## Descripción del Proyecto
+## Project Overview
 
-Este proyecto tiene como objetivo predecir si una video-lectura alcanzará un nivel de **High Engagement** antes de su publicación, utilizando exclusivamente variables disponibles previo a la interacción de los usuarios.
+This project aims to predict whether a video lecture will achieve **high engagement** before publication, using only features available prior to user interaction.
 
-El dataset utilizado proviene del **VLE Dataset v1 (12k)**, un conjunto de datos a gran escala construido a partir de información agregada de consumo de video-lecturas del repositorio [VideoLectures.net](http://videolectures.net/).
+The dataset used is the **VLE Dataset v1 (12k)**, a large-scale dataset built from aggregated consumption data of video lectures from [VideoLectures.net](http://videolectures.net/).
 
-Mientras que el dataset original proporciona métricas continuas de engagement (NET, MNET, ANET), en este proyecto el problema se reformula como una tarea de **clasificación binaria**, con el fin de abordar el problema de *item cold-start* en sistemas de recomendación educativa.
+While the original dataset provides continuous engagement metrics (NET, MNET, ANET), this project reformulates the problem as a **binary classification task** to address the *item cold-start problem* in educational recommender systems.
 
-## Origen del Dataset
+---
 
-El **VLE Dataset v1**:
+## Dataset Overview
 
-- Contiene **11,568 video-lecturas en inglés**
-- Incluye datos agregados de más de **1.1 millones de usuarios**
-- Proporciona métricas de engagement basadas en **Normalized Engagement Time (NET)**
-- Fue diseñado para estudiar el engagement poblacional en video-lecturas educativas
-- Está orientado a problemas de recomendación y análisis de calidad educativa
+The **VLE Dataset v1**:
 
-El dataset incluye múltiples tipos de características: metadata, contenido textual, características semánticas basadas en Wikipedia y variables específicas del video.
+- Contains **11,568 English video lectures**
+- Includes aggregated data from over **1.1 million users**
+- Provides engagement metrics based on **Normalized Engagement Time (NET)**
+- Is designed to study population-level engagement in educational videos
+- Targets applications in recommendation systems and educational quality analysis
 
+The dataset includes multiple feature types: metadata, textual content, Wikipedia-based semantic features, and video-specific variables.
 
+---
 
-## Reformulación del Problema
+## Problem Formulation
 
-El dataset original ofrece etiquetas continuas relacionadas con:
+The original dataset provides continuous labels such as:
 
 - MNET (Median Normalized Engagement Time)
 - ANET (Average Normalized Engagement Time)
 - SMNET / SANET
-- Número de visualizaciones
-- Calificación promedio por estrellas
+- View count
+- Average star rating
 
-En este proyecto:
+In this project:
 
-- Se construyó una variable binaria `engagement`.
-- Debido a la ausencia de una ruptura estructural clara en la distribución del engagement, se utilizó una estrategia basada en **cuartiles (75–25)** para definir la clase positiva.
-- El dataset resultante presenta un **desbalance de clases (75% – 25%)**, lo cual se considera en la fase de modelado.
+- A binary target variable `engagement` was created
+- Due to the absence of a clear structural breakpoint, a **quantile-based approach (75–25)** was used to define the positive class
+- The resulting dataset is **class-imbalanced (75% – 25%)**, which is considered during modeling
 
-Este enfoque simula un escenario realista donde se desea predecir el nivel de engagement antes de que el video reciba interacción de usuarios.
+This setup simulates a real-world scenario where engagement must be predicted before user interaction occurs.
 
+---
 
-## Grupos de Variables Utilizados
+## Feature Groups
 
-El VLE Dataset contiene cuatro grandes grupos de características. En este proyecto se utilizaron aquellas disponibles antes de la publicación del video.
+The VLE dataset contains four main groups of features. This project uses only those available prior to publication.
 
+### Metadata Features
 
-### Variables basadas en Metadata
+- `categories` (grouped as *stem* or *misc*)
+- `type` (lecture type: lecture, tutorial, invited talk, etc.)
 
-- `categories` (dominio agrupado como *stem* o *misc*)
-- `type` (tipo de conferencia: lecture, tutorial, invited talk, etc.)
+These variables were anonymized and grouped in the original dataset.
 
-Estas variables fueron anonimizadas y agrupadas en el dataset original para preservar privacidad.
+---
 
+### Content-Based Features (Transcript)
 
-### Variables basadas en Contenido (Transcript)
-
-Extraídas del texto de la transcripción mediante métricas lingüísticas y de NLP:
+Extracted from lecture transcripts using linguistic and NLP-based metrics:
 
 - `document_entropy`
 - `easiness` (Flesch–Kincaid Easiness)
@@ -64,188 +67,161 @@ Extraídas del texto de la transcripción mediante métricas lingüísticas y de
 - `normalization_rate`
 - `pronoun_rate`
 
-Estas variables capturan aspectos relacionados con:
+These features capture:
 
-- Cobertura temática
-- Comprensibilidad
-- Estilo de presentación
+- Topic coverage  
+- Readability  
+- Presentation style  
 
+---
 
+### Wikipedia-Based Features
 
-### Variables basadas en Wikipedia
+Generated using *Entity Linking* between lecture transcripts and Wikipedia concepts.
 
-Generadas mediante *Entity Linking* entre la transcripción del video y conceptos de Wikipedia.
+Two groups:
 
-Se dividen en dos grupos:
+**1. Topic Authority (PageRank-based)**
 
-1. Autoridad temática (PageRank en grafo semántico)
+- `auth_topic_rank_1_score`
+- `auth_topic_rank_2_score`
+- `auth_topic_rank_3_score`
+- `auth_topic_rank_4_score`
+- `auth_topic_rank_5_score`
 
-    - `auth_topic_rank_1_score`
-    - `auth_topic_rank_2_score`
-    - `auth_topic_rank_3_score`
-    - `auth_topic_rank_4_score`
-    - `auth_topic_rank_5_score`
+**2. Topic Coverage (Cosine similarity)**
 
-2. Cobertura temática (Similitud coseno)
+- `coverage_topic_rank_1_score`
+- `coverage_topic_rank_2_score`
+- `coverage_topic_rank_3_score`
+- `coverage_topic_rank_4_score`
+- `coverage_topic_rank_5_score`
 
-    - `coverage_topic_rank_1_score`
-    - `coverage_topic_rank_2_score`
-    - `coverage_topic_rank_3_score`
-    - `coverage_topic_rank_4_score`
-    - `coverage_topic_rank_5_score`
+These features quantify semantic relevance and depth of content.
 
-    Estas variables cuantifican la relevancia y profundidad semántica del contenido.
+---
 
-
-
-### Variables específicas del Video
+### Video-Specific Features
 
 - `duration`
 - `silent_period_rate`
 - `freshness`
 
-Capturan características estructurales y temporales de la conferencia.
+These capture structural and temporal characteristics of the lectures.
 
-# Exploración de Datos (EDA)
+---
 
-Durante el análisis exploratorio se analizaron:
+## Exploratory Data Analysis (EDA)
 
-- distribución de variables
-- presencia de valores atípicos
-- correlaciones entre variables
-- balance de la variable objetivo
+The exploratory analysis included:
 
-El análisis mostró que muchas variables presentan **distribuciones altamente sesgadas**, algo esperado en métricas derivadas de texto y comportamiento de usuario.  
+- Distribution of variables  
+- Detection of outliers  
+- Correlation analysis  
+- Target variable balance  
 
-Asimismo, se identificaron **niveles moderados de correlación** entre algunas variables semánticas basadas en Wikipedia.
+Key findings:
 
-Este análisis permitió orientar las decisiones de preprocesamiento y selección de variables.
+- Many variables show **highly skewed distributions**, typical in text-derived metrics  
+- Moderate correlations were observed among some Wikipedia-based features  
 
-# Preprocesamiento de Datos
+These insights guided preprocessing and feature selection.
 
-El pipeline de preprocesamiento incluyó:
+---
 
-### Escalamiento
+## Data Preprocessing
 
-Se aplicó **StandardScaler** para normalizar variables numéricas en modelos sensibles a escala, como regresión logística.
+### Scaling
 
-### Reducción de dimensionalidad
+**StandardScaler** was applied to normalize numerical features for scale-sensitive models such as logistic regression.
 
-Se evaluaron tres representaciones del dataset:
+### Dimensionality Reduction
 
-1. **Dataset completo**
-2. **Dataset reducido** eliminando variables altamente correlacionadas
-3. **Dataset transformado mediante PCA**
+Three dataset versions were evaluated:
 
-Esto permitió analizar cómo afecta la dimensionalidad al desempeño de los modelos.
+1. **Full dataset**
+2. **Reduced dataset** (removing highly correlated variables)
+3. **PCA-transformed dataset**
 
-# Preprocesamiento de Datos
+This allowed analysis of how dimensionality impacts model performance.
 
-El pipeline de preprocesamiento incluyó:
+---
 
-### Escalamiento
+## Model Generalization Analysis
 
-Se aplicó **StandardScaler** para normalizar variables numéricas en modelos sensibles a escala, como regresión logística.
+To evaluate generalization, performance was compared between **train and test sets** using **ROC AUC**.
 
-### Reducción de dimensionalidad
+The **AUC gap** was defined as:
 
-Se evaluaron tres representaciones del dataset:
+AUC gap = AUC (train) - AUC (test)
 
-1. **Dataset completo**
-2. **Dataset reducido** eliminando variables altamente correlacionadas
-3. **Dataset transformado mediante PCA**
+Results:
 
-Esto permitió analizar cómo afecta la dimensionalidad al desempeño de los modelos.
+- **Logistic Regression**: excellent generalization (gap ≈ 0)
+- **Decision Tree**: slight overfitting
+- **Random Forest**: moderate overfitting (~0.11 gap)
+- **XGBoost**: strong balance between fit and generalization
 
-# Evaluación del Ajuste
+---
 
-Para analizar la capacidad de generalización de los modelos se comparó el desempeño en **train vs test** mediante la métrica **ROC AUC**.
+## Model Evaluation
 
-Se calculó el **AUC gap**, definido como: AUC gap = AUC Train - AUC Test
-
-Los resultados muestran:
-
-- **Logistic Regression**: excelente generalización (gap ≈ 0)
-- **Decision Tree**: ligero sobreajuste
-- **Random Forest**: mayor gap (~0.11)
-- **XGBoost**: buen equilibrio entre capacidad de ajuste y generalización
-
-# Evaluación de Modelos
-
-Los modelos fueron evaluados utilizando múltiples métricas:
+Models were evaluated using:
 
 - **ROC AUC**
 - **Recall**
 - **Precision**
 - **Accuracy**
 
-También se utilizaron herramientas visuales como:
+Additionally, visual tools were used:
 
-- Curvas ROC
-- Curvas Precision–Recall
-- Matrices de confusión
+- ROC curves  
+- Precision–Recall curves  
+- Confusion matrices  
 
-Dado que el objetivo del proyecto es **minimizar falsos negativos**, se priorizó el **Recall**.
+Since the goal is to **minimize false negatives**, **Recall** was prioritized.
 
-# Ajuste del Umbral de Decisión
+---
 
-El umbral de clasificación por defecto (0.5) fue ajustado para cada modelo con el objetivo de alcanzar: Recall >= 0.8
+## Decision Threshold Tuning
 
-Esto permite identificar la mayor cantidad posible de videos con alto engagement, aceptando un incremento moderado en falsos positivos.
+The default classification threshold (0.5) was adjusted for each model to achieve:
 
+**Recall ≥ 0.8**
 
-# Selección del Modelo Final
+This ensures that most high-engagement videos are correctly identified, allowing a moderate increase in false positives.
 
-Tras el ajuste del umbral, se compararon los mejores modelos de cada algoritmo.
+---
 
-El modelo final seleccionado fue:
+## Final Model Selection
 
-**XGBoost entrenado con el dataset completo**
+After threshold tuning, the best-performing models were compared.
 
-Resultados:
+The selected final model:
 
-| Métrica | Valor |
-|------|------|
-| Recall | 0.80 |
-| Precision | 0.52 |
+**XGBoost trained on the full dataset**
+
+### Results:
+
+| Metric    | Value |
+|----------|------|
+| Recall   | 0.80 |
+| Precision| 0.52 |
 | Accuracy | 0.75 |
-| AUC | 0.86 |
+| AUC      | 0.86 |
 
-Este modelo ofrece el **mejor equilibrio entre detección de videos con alto engagement y control de falsos positivos**.
-
----
-
-# Conclusiones
-
-Los resultados muestran que es posible **predecir el potencial de engagement de una video-lectura antes de su publicación** utilizando únicamente características del contenido y metadata.
-
-Entre los modelos evaluados:
-
-- los modelos lineales presentan mejor generalización
-- los modelos basados en árboles capturan relaciones más complejas
-- **XGBoost logra el mejor desempeño global**
-
-Este tipo de modelo puede integrarse en **sistemas de recomendación educativa**, permitiendo priorizar contenidos con mayor probabilidad de generar engagement.
+This model provides the **best balance between detecting high-engagement videos and controlling false positives**.
 
 ---
 
-# Estructura del Proyecto
-├── notebooks
+## Conclusions
 
-│    └──  data_preprocessing.ipynb
+The results show that it is possible to **predict the engagement potential of a video lecture before publication** using only content and metadata features.
 
-│   └──  modeling.ipynb
+Key insights:
 
-├── data
+- Linear models show better generalization  
+- Tree-based models capture more complex relationships  
+- **XGBoost achieves the best overall performance**
 
-│    └──processed
-
-           └── Datasets for training
-
-    └──raw
-
-           └── vle_dataset
-
-├── README.md
-
-
+This type of model can be integrated into **educational recommender systems**, helping prioritize content with higher engagement potential.
